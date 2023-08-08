@@ -21,6 +21,10 @@ def accuracy(model, test_loader):
     total = 0
 
     for X, y in test_loader:
+
+        X = X.to(device)
+        y = y.to(device)
+
         outputs = model(X)
         correct += (outputs == y).sum().item()
         total += 1
