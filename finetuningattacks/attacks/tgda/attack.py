@@ -5,10 +5,11 @@ from .grad import *
 
 def run_tgda_attack(
         poisoner_model,
-        steps,
-        step_size,
+        poisoner_model_steps,
+        poisoner_model_step_size,
         poisoned_model,
-        optimizer,
+        poisoned_model_steps,
+        poisoned_model_optimizer,
         train_loss,
         test_loss,
         eval_metric,
@@ -25,7 +26,7 @@ def run_tgda_attack(
 
     poisoner_model = poisoner_model.to(device)
     poisoned_model = poisoned_model.to(device)
-    optimizer = optimizer(poisoned_model.head.parameters())
+    optimizer = poisoned_model_optimizer(poisoned_model.head.parameters())
 
     for epoch in range(epochs):
         print(f"\n\n ----------------------------------- EPOCH {epoch + 1} ----------------------------------- \n\n")
@@ -48,7 +49,7 @@ def run_tgda_attack(
             # ------------------------------ FIT POISONER MODEL --------------------------------
             # ----------------------------------------------------------------------------------
 
-            for _ in range(steps):
+            for _ in range(poisoner_model_steps):
                 hxw_inv_hww_dw = hxw_inv_hww_dw_product(
                     leader_loss=lambda: train_loss(poisoned_model, poisoner_model, train_X, train_y, poisoned_X, poisoned_y),
                     follower_loss=lambda: test_loss(poisoned_model, val_X, val_y),
@@ -58,19 +59,20 @@ def run_tgda_attack(
 
                 # gradient ascent to maximize loss
                 for param, update in zip(poisoner_model.parameters(), hxw_inv_hww_dw):
-                    param.data += step_size * (-update)
+                    param.data += poisoner_model_step_size * (-update)
 
 
             # ----------------------------------------------------------------------------------
             # ------------------------------ FIT POISONED MODEL --------------------------------
             # ----------------------------------------------------------------------------------
 
-            optimizer.zero_grad()
+            for _ in range(poisoned_model_steps):
+                optimizer.zero_grad()
 
-            loss = train_loss(poisoned_model, poisoner_model, train_X, train_y, poisoned_X, poisoned_y)
+                loss = train_loss(poisoned_model, poisoner_model, train_X, train_y, poisoned_X, poisoned_y)
 
-            loss.backward()
-            optimizer.step()
+                loss.backward()
+                optimizer.step()
 
 
         # ----------------------------------------------------------------------------------
