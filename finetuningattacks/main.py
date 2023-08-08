@@ -6,12 +6,17 @@ from datasets.cifar10.poisoned import *
 from datasets.cifar10.data import *
 
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 if __name__ == '__main__':
+
+    torch.cuda.empty_cache()
+
     tgda_config = {
         'poisoner_model': CIFAR10PoisonerModel(),
         'steps': 1,
         'step_size': 0.1,
-        'poisoned_model': CIFAR10ResnetPoisonedModelWithPretraining(),
+        'poisoned_model': CIFAR10ResnetPoisonedModel(),
         'optimizer': lambda params: torch.optim.SGD(params, lr=0.01, momentum=0.9),
         'train_loss': ce_train_loss,
         'test_loss': ce_test_loss,
@@ -24,5 +29,6 @@ if __name__ == '__main__':
         'print_epochs': 2,
         'save_epochs': 20,
         'save_folder': './saved_models/tgda/cifar10/',
+        'device': device,
     }
     run_tgda_attack(**tgda_config)

@@ -1,6 +1,7 @@
 import os
 import torch
-from grad import *
+from tqdm import tqdm
+from .grad import *
 
 def run_tgda_attack(
         poisoner_model,
@@ -19,17 +20,22 @@ def run_tgda_attack(
         print_epochs, 
         save_epochs,
         save_folder,
+        device,
     ):
 
+    poisoner_model = poisoner_model.to(device)
+    poisoned_model = poisoned_model.to(device)
     optimizer = optimizer(poisoned_model.parameters())
 
-    for epoch in epochs:
-        
-        for X, y in train_loader:
+    for epoch in range(epochs):
+        print(f"\n\n ----------------------------------- EPOCH {epoch + 1} ----------------------------------- \n\n")
+        for _, (X, y) in enumerate(tqdm(train_loader)):
 
             # ----------------------------------------------------------------------------------
             # ----------------------------------- LOAD DATA ------------------------------------
             # ----------------------------------------------------------------------------------
+            X = X.to(device)
+            y = y.to(device)
 
             train_X, train_y = X[:int(train_ratio * len(X))], y[:int(train_ratio * len(y))]
             val_X, val_y = X[int(train_ratio * len(X)):], y[int(train_ratio * len(y)):]
@@ -44,8 +50,8 @@ def run_tgda_attack(
 
             for _ in range(steps):
                 hxw_inv_hww_dw = hxw_inv_hww_dw_product(
-                    leader_loss=train_loss(poisoned_model, poisoner_model, train_X, train_y, poisoned_X, poisoned_y),
-                    follower_loss=test_loss(poisoned_model, val_X, val_y),
+                    leader_loss=lambda: train_loss(poisoned_model, poisoner_model, train_X, train_y, poisoned_X, poisoned_y),
+                    follower_loss=lambda: test_loss(poisoned_model, val_X, val_y),
                     leader=poisoner_model,
                     follower=poisoned_model,
                 )

@@ -39,9 +39,6 @@ def conjugate_gradient(_hvp, b, maxiter=16, tol=0.01, lam=0.0):
         with torch.enable_grad():
             Qdds = hvp(hvp(dds))
 
-        # print(dot(ggs, ggs))
-        # print(norm(ggs))
-
         # if dot(ggs, ggs) < tol:
         if norm(ggs) < tol:
             break
@@ -66,7 +63,6 @@ def dot(tensors_one, tensors_two):
     ret = tensors_one[0].new_zeros((1, ), requires_grad=True)
 
     for t1, t2 in zip(tensors_one, tensors_two):
-        print(t1.shape, t2.shape)
         ret = ret + torch.sum(t1 * t2)
 
     return ret
@@ -90,9 +86,9 @@ def hxw_inv_hww_dw_product(leader_loss, follower_loss, leader, follower):
     # (L_train_ww)^-1 (L_test_w) | x represents poisoner model, w represents poisoned model
     inv_hww_dw = conjugate_gradient(
         # (L_train_ww)^-1
-        _hvp=lambda tensors: hww_product(follower_loss, leader, follower, tensors),
+        _hvp=lambda tensors: hww_product(follower_loss, follower, tensors),
         # L_test_w
-        b=autograd(leader_loss, follower.parameters()))
+        b=autograd(leader_loss(), follower.parameters()))
     
     # L_train_wx ((L_train_ww)^-1 (L_test_w))
     hxw_inv_hww_dw = hxw_product(
