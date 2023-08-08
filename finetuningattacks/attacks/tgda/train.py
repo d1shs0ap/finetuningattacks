@@ -3,33 +3,36 @@ import torch
 from tqdm import tqdm
 from .grad import *
 
-def run_tgda_attack(
-        poisoner_model,
-        poisoner_model_steps,
-        poisoner_model_step_size,
-        poisoned_model,
-        poisoned_model_steps,
-        poisoned_model_optimizer,
-        train_loss,
-        test_loss,
-        eval_metric,
-        train_loader,
-        test_loader,
-        train_ratio,
-        epsilon, 
-        epochs,
-        print_epochs, 
-        save_epochs,
-        save_folder,
-        device,
-    ):
+def train_tgda(
+    poisoner_model,
+    poisoner_load_file,
+    poisoner_model_steps,
+    poisoner_model_step_size,
+    poisoned_model,
+    poisoned_model_steps,
+    poisoned_model_optimizer,
+    train_loss,
+    test_loss,
+    eval_metric,
+    train_loader,
+    test_loader,
+    train_ratio,
+    epsilon, 
+    epochs,
+    print_epochs, 
+    save_epochs,
+    save_folder,
+    device,
+):
+
+    poisoner_model.load_state_dict(torch.load(os.path.join(save_folder, poisoner_load_file)))
 
     poisoner_model = poisoner_model.to(device)
     poisoned_model = poisoned_model.to(device)
     optimizer = poisoned_model_optimizer(poisoned_model.head.parameters())
 
     for epoch in range(epochs):
-        print(f"\n\n ----------------------------------- EPOCH {epoch + 1} ----------------------------------- \n\n")
+        print(f"\n\n ----------------------------------- EPOCH {epoch} ----------------------------------- \n\n")
         for _, (X, y) in enumerate(tqdm(train_loader)):
 
             # ----------------------------------------------------------------------------------
@@ -50,6 +53,7 @@ def run_tgda_attack(
             # ----------------------------------------------------------------------------------
 
             for _ in range(poisoner_model_steps):
+                # Total gradient ascent
                 hxw_inv_hww_dw = hxw_inv_hww_dw_product(
                     leader_loss=lambda: train_loss(poisoned_model, poisoner_model, train_X, train_y, poisoned_X, poisoned_y),
                     follower_loss=lambda: test_loss(poisoned_model, val_X, val_y),
@@ -80,7 +84,7 @@ def run_tgda_attack(
         # ----------------------------------------------------------------------------------
 
         if (epoch + 1) % print_epochs == 0:
-            print(f"{eval_metric(poisoned_model, test_loader)} at epoch {epoch}")
+            print(f"{eval_metric(poisoned_model, test_loader, device)} at epoch {epoch}")
 
         if (epoch + 1) % save_epochs == 0:
 

@@ -1,6 +1,6 @@
 from torch import nn
 
-class CIFAR10PoisonerModel(nn.Module):
+class CIFAR10Poisoner(nn.Module):
     def __init__(self):
         super().__init__()
         

@@ -1,8 +1,10 @@
 *.DS_Store
 *.csv
+*.output
 
 **/__pycache__
 
 **/.ipynb_checkpoints
 **/data
 **/checkpoints
+**/saved_models

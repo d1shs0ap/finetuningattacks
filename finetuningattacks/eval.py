@@ -16,7 +16,7 @@ def ce_train_loss(poisoned_model, poisoner_model, X, y, poisoned_X, poisoned_y):
     return loss(outputs, y.long())
 
 @torch.no_grad()
-def accuracy(model, test_loader):
+def accuracy(model, test_loader, device):
     correct = 0
     total = 0
 
@@ -26,7 +26,10 @@ def accuracy(model, test_loader):
         y = y.to(device)
 
         outputs = model(X)
-        correct += (outputs == y).sum().item()
-        total += 1
+        pred = torch.argmax(outputs, dim=1)
+        
+        correct += (pred == y).sum().item()
+        total += len(X)
     
     return correct / total
+

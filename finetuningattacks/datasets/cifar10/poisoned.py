@@ -1,7 +1,7 @@
 from torch import nn
 from torchvision.models import resnet18, ResNet18_Weights
 
-class CIFAR10ResnetPoisonedModel(nn.Module):
+class CIFAR10PoisonedResnet(nn.Module):
     def __init__(self):
         super().__init__()
         self.net = resnet18()
@@ -15,7 +15,7 @@ class CIFAR10ResnetPoisonedModel(nn.Module):
     def head(self):
         return self
 
-class CIFAR10ResnetPoisonedModelWithPretraining(nn.Module):
+class CIFAR10PoisonedResnetWithPretraining(nn.Module):
 
     def __init__(self):
         super().__init__()
