@@ -25,7 +25,8 @@ def train_tgda(
     device,
 ):
 
-    poisoner_model.load_state_dict(torch.load(os.path.join(save_folder, poisoner_load_file)))
+    if poisoner_load_file:
+        poisoner_model.load_state_dict(torch.load(os.path.join(save_folder, poisoner_load_file)))
 
     poisoner_model = poisoner_model.to(device)
     poisoned_model = poisoned_model.to(device)
@@ -84,7 +85,7 @@ def train_tgda(
         # ----------------------------------------------------------------------------------
 
         if (epoch + 1) % print_epochs == 0:
-            print(f"{eval_metric(poisoned_model, test_loader, device)} at epoch {epoch}")
+            print(f"Test: {eval_metric(poisoned_model, test_loader, device)} at epoch {epoch}")
 
         if (epoch + 1) % save_epochs == 0:
 

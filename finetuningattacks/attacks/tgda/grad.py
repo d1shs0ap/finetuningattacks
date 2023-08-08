@@ -5,7 +5,7 @@ def norm(tensors):
     return math.sqrt(sum([torch.sum(tensor ** 2).item() for tensor in tensors]))
 
 @torch.no_grad()
-def conjugate_gradient(_hvp, b, maxiter=16, tol=0.01, lam=0.0):
+def conjugate_gradient(_hvp, b, maxiter=16, tol=1e-50, lam=0.0):
     """
     Minimize 0.5 x^T H^T H x - b^T H x, where H is symmetric
     Args:
