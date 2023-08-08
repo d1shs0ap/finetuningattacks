@@ -25,7 +25,7 @@ def run_tgda_attack(
 
     poisoner_model = poisoner_model.to(device)
     poisoned_model = poisoned_model.to(device)
-    optimizer = optimizer(poisoned_model.parameters())
+    optimizer = optimizer(poisoned_model.head.parameters())
 
     for epoch in range(epochs):
         print(f"\n\n ----------------------------------- EPOCH {epoch + 1} ----------------------------------- \n\n")
@@ -53,7 +53,7 @@ def run_tgda_attack(
                     leader_loss=lambda: train_loss(poisoned_model, poisoner_model, train_X, train_y, poisoned_X, poisoned_y),
                     follower_loss=lambda: test_loss(poisoned_model, val_X, val_y),
                     leader=poisoner_model,
-                    follower=poisoned_model,
+                    follower=poisoned_model.head,
                 )
 
                 # gradient ascent to maximize loss

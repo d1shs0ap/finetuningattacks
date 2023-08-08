@@ -1,6 +1,4 @@
-import torch
 from torch import nn
-import torch.nn.functional as F
 from torchvision.models import resnet18, ResNet18_Weights
 
 class CIFAR10ResnetPoisonedModel(nn.Module):
@@ -12,6 +10,10 @@ class CIFAR10ResnetPoisonedModel(nn.Module):
     def forward(self, x):
         x = self.net(x)
         return x
+    
+    @property
+    def head(self):
+        return self
 
 class CIFAR10ResnetPoisonedModelWithPretraining(nn.Module):
 
@@ -27,4 +29,8 @@ class CIFAR10ResnetPoisonedModelWithPretraining(nn.Module):
     def forward(self, x):
         x = self.net(x)
         return x
+
+    @property
+    def head(self):
+        return self.net.fc
 

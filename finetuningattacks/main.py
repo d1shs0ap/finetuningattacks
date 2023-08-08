@@ -16,7 +16,7 @@ if __name__ == '__main__':
         'poisoner_model': CIFAR10PoisonerModel(),
         'steps': 1,
         'step_size': 0.1,
-        'poisoned_model': CIFAR10ResnetPoisonedModel(),
+        'poisoned_model': CIFAR10ResnetPoisonedModelWithPretraining(),
         'optimizer': lambda params: torch.optim.SGD(params, lr=0.01, momentum=0.9),
         'train_loss': ce_train_loss,
         'test_loss': ce_test_loss,
