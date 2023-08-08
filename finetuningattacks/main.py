@@ -14,10 +14,11 @@ if __name__ == '__main__':
 
     tgda_config = {
         'poisoner_model': CIFAR10PoisonerModel(),
-        'steps': 1,
-        'step_size': 0.1,
+        'poisoner_model_steps': 1,
+        'poisoner_model_step_size': 0.1,
         'poisoned_model': CIFAR10ResnetPoisonedModelWithPretraining(),
-        'optimizer': lambda params: torch.optim.SGD(params, lr=0.01, momentum=0.9),
+        'poisoned_model_steps': 10,
+        'poisoned_model_optimizer': lambda params: torch.optim.SGD(params, lr=0.1, momentum=0.9),
         'train_loss': ce_train_loss,
         'test_loss': ce_test_loss,
         'eval_metric': accuracy,
