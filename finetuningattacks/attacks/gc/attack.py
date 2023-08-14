@@ -73,8 +73,8 @@ def attack_gc(
     print("==> start gradient canceling attack with given target parameters")
     print("==> model will be saved in poisoned_models")
 
-    data_p = torch.zeros(int(epsilon*train_size),3,32,32)
-    target_p = torch.zeros(int(epsilon*train_size))
+    data_p = torch.zeros(int(epsilon*len(train_loader.dataset)),3,32,32)
+    target_p = torch.zeros(int(epsilon*len(train_loader.dataset)))
 
     for epoch in range(epochs):
         print(f"\n\n ----------------------------------- EPOCH {epoch} ----------------------------------- \n\n")
@@ -92,17 +92,20 @@ def attack_gc(
             # initialize f function
             criterion = nn.CrossEntropyLoss(reduction='sum')
             
-            g1 = torch.load('clean_gradients/clean_grad_resnet.pt').to(device)
+            g1 = torch.load(os.path.join(save_folder, 'clean_grad_resnet.pt')).to(device)
             
             # calculate gradient of w on poisoned sample
             output_p = model(data_p_temp)
             loss_p = criterion(output_p,target_p_temp)
-            grad_p= autograd(loss_p,tuple(model.parameters()),create_graph=True)
-            g2 = grad_p[(len(grad_p)-2)]
+            grad_p = autograd(loss_p,tuple(model.head.parameters()),create_graph=True)
+            # g2 = grad_p[(len(grad_p)-2)]
+            g2 = grad_p[-1]
+
+            print("g1", g1)
+            print("g2", g2)
             
             # calculate the true loss: |g_c + g_p|_{2}
             loss = torch.norm(g1+g2, 2)
-            loss_all.append(loss.detach().cpu().numpy())
             if loss < 1:
                 break
                 
@@ -115,7 +118,6 @@ def attack_gc(
                 target_p[i:int(i+epsilon*len(data))] = target_p_temp
             
             i = int(i+epsilon*len(data))
-            torch.save(data_t_temp, 'poisoned_models/data_p_{}.pt'.format(epsilon))
             
             print("epoch:{},loss:{},lr:{}".format(epoch, loss,lr))
 
