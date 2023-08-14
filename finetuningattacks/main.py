@@ -11,9 +11,9 @@ if __name__ == '__main__':
 
     train_cifar_tgda_config = {
         'poisoner_model': CIFAR10Poisoner(),
-        'poisoner_load_file': 'leader.pt',
+        'poisoner_load_file': 'poisoner_model_epoch_1299.tar',
         'poisoner_model_steps': 1,
-        'poisoner_model_step_size': 0.01,
+        'poisoner_model_step_size': 0.1,
         'poisoned_model': CIFAR10PoisonedResnetWithPretraining(),
         'poisoned_model_steps': 10,
         'poisoned_model_optimizer': lambda params: torch.optim.SGD(params, lr=0.001, momentum=0.9),
@@ -27,13 +27,13 @@ if __name__ == '__main__':
         'epochs': 2000,
         'print_epochs': 1,
         'save_epochs': 20,
-        'save_folder': './checkpoints/tgda/cifar10/resnet_pretrained/',
+        'save_folder': './checkpoints/tgda/cifar10/resnet_pretrained/0.1',
         'device': device,
     }
 
     test_cifar_tgda_config = {
         'poisoner_model': CIFAR10Poisoner(),
-        'poisoner_load_epoch': 1999,
+        'poisoner_load_epoch': 199,
         'poisoned_model': CIFAR10PoisonedResnetWithPretraining(),
         'poisoned_model_optimizer': lambda params: torch.optim.SGD(params, lr=0.001, momentum=0.9),
         'train_loss': ce_train_loss,
@@ -44,7 +44,7 @@ if __name__ == '__main__':
         'epochs': 2000,
         'print_epochs': 1,
         'save_epochs': 20,
-        'save_folder': './checkpoints/tgda/cifar10/resnet_pretrained/',
+        'save_folder': './checkpoints/tgda/cifar10/resnet_pretrained/0.1',
         'device': device,
     }
 
@@ -88,9 +88,9 @@ if __name__ == '__main__':
         'device': device,
     }
 
-    train_tgda(**train_cifar_tgda_config)
+    # attack_tgda(**train_cifar_tgda_config)
     test_tgda(**test_cifar_tgda_config)
 
 
-    # train_tgda(**train_mnist_tgda_config)
+    # attack_tgda(**train_mnist_tgda_config)
     # test_tgda(**test_mnist_tgda_config)

@@ -8,7 +8,7 @@ from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
 from tqdm import tqdm
 from torchvision.models import resnet
-from attacker import GradAttacker
+from attacker import GradPCAttacker
 import torchvision.models as models
 
 model_names = sorted(name for name in models.__dict__

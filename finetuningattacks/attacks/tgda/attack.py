@@ -3,7 +3,7 @@ import torch
 from tqdm import tqdm
 from .grad import *
 
-def train_tgda(
+def attack_tgda(
     poisoner_model,
     poisoner_load_file,
     poisoner_model_steps,
