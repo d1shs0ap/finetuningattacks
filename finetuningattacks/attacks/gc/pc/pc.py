@@ -9,7 +9,7 @@ class ParamCorrupter(Optimizer):
         self.LP = LP.lower()
         self.N = N
         defaults = dict(lr=lr)
-        super(GradPCAttacker, self).__init__(params, defaults)
+        super(ParamCorrupter, self).__init__(params, defaults)
 
     def step(self, closure=None):
         # normalize

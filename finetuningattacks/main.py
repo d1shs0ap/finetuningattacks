@@ -95,22 +95,19 @@ if __name__ == '__main__':
     # attack_tgda(**train_mnist_tgda_config)
     # test_tgda(**test_mnist_tgda_config)
 
-    attack_gc_config = {
-        'poisoned_model': CIFAR10PoisonedResnet2(),
-        'poisoned_model_steps': 10,
-        'poisoned_model_optimizer': lambda params: torch.optim.SGD(params, lr=0.001, momentum=0.9),
+
+    attack_pc_config = {
+        'model': CIFAR10PoisonedResnetWithPretraining(),
         'train_loss': ce_loss,
-        'test_loss': poisoned_ce_loss,
+        'optimizer': lambda params: torch.optim.SGD(params, lr=0.001, momentum=0.9),
+        'pc_optimizer': lambda params: ParamCorrupter(params, lr=0.1, eps=1, LP='l2'),
         'eval_metric': accuracy,
         'train_loader': get_cifar10_train_loader('./data', batch_size=1000),
         'test_loader': get_cifar10_test_loader('./data', batch_size=1000),
-        'train_ratio':0.7,
-        'epsilon': 0.03,
-        'epochs': 2000,
-        'print_epochs': 1,
-        'save_epochs': 20,
-        'save_folder': './checkpoints/gc/cifar10/',
+        'epochs': 20,
+        'print_epochs': 2,
+        'save_folder': './checkpoints/gc/cifar10/pc/',
         'device': device,
     }
 
-    attack_gc(**attack_gc_config)
+    attack_pc(**attack_pc_config)
