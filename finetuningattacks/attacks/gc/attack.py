@@ -29,9 +29,10 @@ def attack_gc(
 ):
 
     # ----------------------------------------------------------------------------------
-    # --------------------------- LOAD DATA TO BE POISONED -----------------------------
+    # --------------------------- LOAD DATA, MODELS, GRAD ------------------------------
     # ----------------------------------------------------------------------------------
 
+    # load data to be poisoned
     feature_size = train_loader.dataset[0][0].shape
     poisoned_X_size = torch.Size([int(epsilon * len(train_loader.dataset)), *feature_size])
     poisoned_y_size = torch.Size([int(epsilon * len(train_loader.dataset))])
@@ -39,18 +40,23 @@ def attack_gc(
     poisoned_X = torch.zeros(poisoned_X_size, requires_grad=True, device=device)
     poisoned_y = torch.randint(10, poisoned_y_size, device=device)
 
+    # optimizer for tweaking data
     optimizer = optimizer([poisoned_X])
 
     # load corrupted model
     corrupted_model.load_state_dict(torch.load(corrupted_model_file))
     corrupted_model = corrupted_model.to(device)
     
-    # load clean grad
+    # calculate clean grad
     for X, y in train_loader:
         X = X.to(device)
         y = y.to(device)
         corrupted_gradient_on_clean_data = torch.autograd.grad(loss_fn(corrupted_model, X, y), corrupted_model.head.parameters())
 
+
+    # ----------------------------------------------------------------------------------
+    # ----------------------------- GRADIENT CANCELLING --------------------------------
+    # ----------------------------------------------------------------------------------
 
     for epoch in range(epochs):
         print(f"\n\n ----------------------------------- EPOCH {epoch} ----------------------------------- \n\n")
@@ -69,5 +75,6 @@ def attack_gc(
             print(f"Loss: {loss} at epoch {epoch}")
 
 
+    # save poisoned data
     torch.save(poisoned_X, os.path.join(save_folder, 'poisoned_X.pt'))
     torch.save(poisoned_y, os.path.join(save_folder, 'poisoned_y.pt'))
