@@ -4,6 +4,6 @@ Create a new environment and run
 
 Run attack with
 
-`python finetuningattacks/main.py`
+`python -m finetuningattacks.main`
 
 This project runs on Python 3.10.12

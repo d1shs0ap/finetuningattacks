@@ -95,19 +95,55 @@ if __name__ == '__main__':
     # attack_tgda(**train_mnist_tgda_config)
     # test_tgda(**test_mnist_tgda_config)
 
+    # train_loader = get_cifar10_train_loader('./data', batch_size=1000)
+    # new_size = torch.Size([len(train_loader.dataset), *train_loader.dataset[0][0].shape])
+    # print(torch.zeros(new_size))
+    # exit()
 
-    attack_pc_config = {
+
+    # attack_pc_config = {
+    #     'model': CIFAR10PoisonedResnetWithPretraining(),
+    #     'train_loss': ce_loss,
+    #     'optimizer': lambda params: torch.optim.SGD(params, lr=0.001, momentum=0.9),
+    #     'pc_optimizer': lambda params: ParamCorrupter(params, lr=0.1, eps=1, LP='l2'),
+    #     'eval_metric': accuracy,
+    #     'train_loader': get_cifar10_train_loader('./data', batch_size=1000),
+    #     'test_loader': get_cifar10_test_loader('./data', batch_size=1000),
+    #     'epochs': 20,
+    #     'print_epochs': 2,
+    #     'save_path': './checkpoints/gc/cifar10/pc/corrupted_resnet.pt',
+    #     'device': device,
+    # }
+
+    # attack_pc(**attack_pc_config)
+
+    # attack_gc_config = {
+    #     'corrupted_model': CIFAR10PoisonedResnetWithPretraining(),
+    #     'corrupted_model_file': './checkpoints/gc/cifar10/pc/corrupted_resnet.pt',
+    #     'optimizer': lambda params: torch.optim.SGD(params, lr=0.1, momentum=0.9),
+    #     'loss_fn': ce_loss,
+    #     'train_loader': get_cifar10_train_loader('./data', batch_size=50000),
+    #     'epsilon': 0.03,
+    #     'epochs': 200,
+    #     'print_epochs': 2,
+    #     'save_folder': './checkpoints/gc/cifar10/',
+    #     'device': device,
+    # }
+
+    # attack_gc(**attack_gc_config)
+
+    test_gc_config = {
         'model': CIFAR10PoisonedResnetWithPretraining(),
-        'train_loss': ce_loss,
+        'loss_fn': ce_loss,
         'optimizer': lambda params: torch.optim.SGD(params, lr=0.001, momentum=0.9),
-        'pc_optimizer': lambda params: ParamCorrupter(params, lr=0.1, eps=1, LP='l2'),
         'eval_metric': accuracy,
         'train_loader': get_cifar10_train_loader('./data', batch_size=1000),
         'test_loader': get_cifar10_test_loader('./data', batch_size=1000),
+        'epsilon': 0.03,
         'epochs': 20,
         'print_epochs': 2,
-        'save_folder': './checkpoints/gc/cifar10/pc/',
+        'save_folder': './checkpoints/gc/cifar10/',
         'device': device,
     }
 
-    attack_pc(**attack_pc_config)
+    test_gc(**test_gc_config)
