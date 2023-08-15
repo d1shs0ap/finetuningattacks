@@ -3,7 +3,7 @@ import torch
 from tqdm import tqdm
 from .grad import *
 
-def train_tgda(
+def attack_tgda(
     poisoner_model,
     poisoner_load_file,
     poisoner_model_steps,
@@ -24,6 +24,10 @@ def train_tgda(
     save_folder,
     device,
 ):
+
+    # ----------------------------------------------------------------------------------
+    # ---------------------------------- LOAD MODELs -----------------------------------
+    # ----------------------------------------------------------------------------------
 
     if poisoner_load_file:
         poisoner_model.load_state_dict(torch.load(os.path.join(save_folder, poisoner_load_file)))
@@ -81,7 +85,7 @@ def train_tgda(
 
 
         # ----------------------------------------------------------------------------------
-        # -------------------------------- PRINT AND SAVE ----------------------------------
+        # --------------------------------- TEST AND SAVE ----------------------------------
         # ----------------------------------------------------------------------------------
 
         if (epoch + 1) % print_epochs == 0:

@@ -20,8 +20,11 @@ def test_tgda(
     device,
 ):
 
-    poisoner_model.load_state_dict(torch.load(os.path.join(save_folder, f'poisoner_model_epoch_{poisoner_load_epoch}.tar')))
+    # ----------------------------------------------------------------------------------
+    # ---------------------------------- LOAD MODELs -----------------------------------
+    # ----------------------------------------------------------------------------------
 
+    poisoner_model.load_state_dict(torch.load(os.path.join(save_folder, f'poisoner_model_epoch_{poisoner_load_epoch}.tar')))
     poisoner_model = poisoner_model.to(device)
     poisoned_model = poisoned_model.to(device)
     optimizer = poisoned_model_optimizer(poisoned_model.head.parameters())

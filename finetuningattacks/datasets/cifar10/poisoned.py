@@ -1,5 +1,5 @@
 from torch import nn
-from torchvision.models import resnet18, ResNet18_Weights
+from torchvision.models import resnet18, ResNet18_Weights, resnet
 
 class CIFAR10PoisonedResnet(nn.Module):
     def __init__(self):
@@ -33,4 +33,3 @@ class CIFAR10PoisonedResnetWithPretraining(nn.Module):
     @property
     def head(self):
         return self.net.fc
-
