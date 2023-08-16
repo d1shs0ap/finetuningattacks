@@ -118,21 +118,21 @@ if __name__ == '__main__':
 
     # attack_pc(**attack_pc_config)
 
-    attack_gc_config = {
-        'corrupted_model': CIFAR10PoisonedResnetResnetWithMOCOPretraining(),
-        'corrupted_model_file': './checkpoints/gc/cifar10/pc/corrupted_moco_resnet.pt',
-        'optimizer': lambda params: torch.optim.SGD(params, lr=0.01, momentum=0.9),
-        # 'scheduler': lambda optimizer: torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5),
-        'loss_fn': ce_loss,
-        'train_loader': get_cifar10_train_loader('./data', batch_size=10000),
-        'epsilon': 0.0003,
-        'epochs': 2000,
-        'print_epochs': 2,
-        'save_folder': './checkpoints/gc/cifar10/',
-        'device': device,
-    }
+    # attack_gc_config = {
+    #     'corrupted_model': CIFAR10PoisonedResnetResnetWithMOCOPretraining(),
+    #     'corrupted_model_file': './checkpoints/gc/cifar10/pc/corrupted_moco_resnet.pt',
+    #     'optimizer': lambda params: torch.optim.SGD(params, lr=0.01, momentum=0.9),
+    #     # 'scheduler': lambda optimizer: torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5),
+    #     'loss_fn': ce_loss,
+    #     'train_loader': get_cifar10_train_loader('./data', batch_size=10000),
+    #     'epsilon': 0.0003,
+    #     'epochs': 2000,
+    #     'print_epochs': 2,
+    #     'save_folder': './checkpoints/gc/cifar10/',
+    #     'device': device,
+    # }
 
-    attack_gc(**attack_gc_config)
+    # attack_gc(**attack_gc_config)
 
     test_gc_config = {
         'model': CIFAR10PoisonedResnetResnetWithMOCOPretraining(),

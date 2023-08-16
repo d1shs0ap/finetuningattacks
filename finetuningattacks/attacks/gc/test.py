@@ -18,13 +18,21 @@ def test_gc(
     save_folder,
     device,
 ):
+    torch.manual_seed(2)
 
     model = model.to(device)
     optimizer = optimizer(model.head.parameters())
     scheduler = scheduler(optimizer)
 
-    poisoned_X = torch.load(os.path.join(save_folder, 'poisoned_X.pt')).to(device)
-    poisoned_y = torch.load(os.path.join(save_folder, 'poisoned_y.pt')).to(device)
+    # poisoned_X = torch.load(os.path.join(save_folder, 'poisoned_X.pt')).to(device)
+    # poisoned_y = torch.load(os.path.join(save_folder, 'poisoned_y.pt')).to(device)
+
+    feature_size = train_loader.dataset[0][0].shape
+    poisoned_X_size = torch.Size([int(epsilon * len(train_loader.dataset)), *feature_size])
+    poisoned_y_size = torch.Size([int(epsilon * len(train_loader.dataset))])
+
+    poisoned_X = 10e7 * torch.rand(poisoned_X_size, device=device)
+    poisoned_y = torch.zeros(poisoned_y_size, device=device)
     poisoned_batch_size = int(train_loader.batch_size * epsilon)
 
     for epoch in range(epochs):
