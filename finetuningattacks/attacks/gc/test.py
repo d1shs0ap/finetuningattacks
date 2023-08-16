@@ -8,6 +8,7 @@ def test_gc(
     model,
     loss_fn,
     optimizer,
+    scheduler,
     eval_metric,
     train_loader,
     test_loader,
@@ -20,6 +21,7 @@ def test_gc(
 
     model = model.to(device)
     optimizer = optimizer(model.head.parameters())
+    scheduler = scheduler(optimizer)
 
     poisoned_X = torch.load(os.path.join(save_folder, 'poisoned_X.pt')).to(device)
     poisoned_y = torch.load(os.path.join(save_folder, 'poisoned_y.pt')).to(device)
@@ -42,6 +44,8 @@ def test_gc(
 
             loss.backward()
             optimizer.step()
+        
+        scheduler.step()
 
         if (epoch + 1) % print_epochs == 0:
             model.eval()

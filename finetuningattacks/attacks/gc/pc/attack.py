@@ -7,7 +7,7 @@ def train_epoch(
     model,
     train_loader,
     test_loader,
-    train_loss,
+    loss_fn,
     optimizer,
     eval_metric,
     device,
@@ -34,6 +34,7 @@ def attack_pc(
     model,
     loss_fn,
     optimizer,
+    scheduler,
     pc_optimizer,
     eval_metric,
     train_loader,
@@ -50,12 +51,13 @@ def attack_pc(
 
     model = model.to(device)
     optimizer = optimizer(model.head.parameters())
+    scheduler = scheduler(optimizer)
 
     for epoch in range(epochs):
         print(f"\n\n ----------------------------------- EPOCH {epoch} ----------------------------------- \n\n")
 
         train_epoch(model, train_loader, test_loader, loss_fn, optimizer, eval_metric, device, epoch, print_epochs)
-
+        scheduler.step()
 
     # ----------------------------------------------------------------------------------
     # ------------------------------- CORRUPT PARAMETERS -------------------------------

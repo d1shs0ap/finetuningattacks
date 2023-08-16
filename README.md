@@ -1,6 +1,6 @@
 Create a new environment and run
 
-`pip -r requirements.txt`
+`pip install -r requirements.txt`
 
 Run attack with
 

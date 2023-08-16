@@ -102,46 +102,49 @@ if __name__ == '__main__':
 
 
     # attack_pc_config = {
-    #     'model': CIFAR10PoisonedResnetWithPretraining(),
-    #     'train_loss': ce_loss,
-    #     'optimizer': lambda params: torch.optim.SGD(params, lr=0.001, momentum=0.9),
+    #     'model': CIFAR10PoisonedResnetResnetWithMOCOPretraining(),
+    #     'loss_fn': ce_loss,
+    #     'optimizer': lambda params: torch.optim.SGD(params, lr=0.1, momentum=0.9),
+    #     'scheduler': lambda optimizer: torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=20),
     #     'pc_optimizer': lambda params: ParamCorrupter(params, lr=0.1, eps=1, LP='l2'),
     #     'eval_metric': accuracy,
     #     'train_loader': get_cifar10_train_loader('./data', batch_size=1000),
     #     'test_loader': get_cifar10_test_loader('./data', batch_size=1000),
     #     'epochs': 20,
     #     'print_epochs': 2,
-    #     'save_path': './checkpoints/gc/cifar10/pc/corrupted_resnet.pt',
+    #     'save_path': './checkpoints/gc/cifar10/pc/corrupted_moco_resnet.pt',
     #     'device': device,
     # }
 
     # attack_pc(**attack_pc_config)
 
-    # attack_gc_config = {
-    #     'corrupted_model': CIFAR10PoisonedResnetWithPretraining(),
-    #     'corrupted_model_file': './checkpoints/gc/cifar10/pc/corrupted_resnet.pt',
-    #     'optimizer': lambda params: torch.optim.SGD(params, lr=0.1, momentum=0.9),
-    #     'loss_fn': ce_loss,
-    #     'train_loader': get_cifar10_train_loader('./data', batch_size=50000),
-    #     'epsilon': 0.03,
-    #     'epochs': 200,
-    #     'print_epochs': 2,
-    #     'save_folder': './checkpoints/gc/cifar10/',
-    #     'device': device,
-    # }
+    attack_gc_config = {
+        'corrupted_model': CIFAR10PoisonedResnetResnetWithMOCOPretraining(),
+        'corrupted_model_file': './checkpoints/gc/cifar10/pc/corrupted_moco_resnet.pt',
+        'optimizer': lambda params: torch.optim.SGD(params, lr=0.01, momentum=0.9),
+        # 'scheduler': lambda optimizer: torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5),
+        'loss_fn': ce_loss,
+        'train_loader': get_cifar10_train_loader('./data', batch_size=10000),
+        'epsilon': 0.0003,
+        'epochs': 2000,
+        'print_epochs': 2,
+        'save_folder': './checkpoints/gc/cifar10/',
+        'device': device,
+    }
 
-    # attack_gc(**attack_gc_config)
+    attack_gc(**attack_gc_config)
 
     test_gc_config = {
-        'model': CIFAR10PoisonedResnetWithPretraining(),
+        'model': CIFAR10PoisonedResnetResnetWithMOCOPretraining(),
         'loss_fn': ce_loss,
-        'optimizer': lambda params: torch.optim.SGD(params, lr=0.001, momentum=0.9),
+        'optimizer': lambda params: torch.optim.SGD(params, lr=1000, momentum=0.9),
+        'scheduler': lambda optimizer: torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=100),
         'eval_metric': accuracy,
         'train_loader': get_cifar10_train_loader('./data', batch_size=1000),
         'test_loader': get_cifar10_test_loader('./data', batch_size=1000),
         'epsilon': 0.03,
-        'epochs': 20,
-        'print_epochs': 2,
+        'epochs': 100,
+        'print_epochs': 1,
         'save_folder': './checkpoints/gc/cifar10/',
         'device': device,
     }
