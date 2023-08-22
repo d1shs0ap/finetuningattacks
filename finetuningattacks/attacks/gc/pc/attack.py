@@ -1,11 +1,7 @@
 import os
 import torch
 from tqdm import tqdm
-
-
-import os
-import torch
-from tqdm import tqdm
+import copy
 
 
 def train_epoch(
@@ -37,7 +33,7 @@ def train_epoch(
 
 def attack_pc(
     model,
-    loss_fn,
+    pc_loss_fn,
     optimizer,
     pc_optimizer,
     eval_metric,
@@ -49,6 +45,7 @@ def attack_pc(
     device,
     **kwargs,
 ):
+    loss_fn = pc_loss_fn
 
     # ----------------------------------------------------------------------------------
     # ----------------------------------- FIT MODEL ------------------------------------

@@ -42,8 +42,11 @@ def attack_gc(
     
     # poisoned_X = 10 * torch.rand(poisoned_X_size, device=device)
     # poisoned_X.requires_grad = True
-    poisoned_X = torch.zeros(poisoned_X_size, requires_grad=True, device=device)
-    poisoned_y = torch.randint(10, poisoned_y_size, device=device)
+    # poisoned_X = torch.zeros(poisoned_X_size, requires_grad=True, device=device)
+    # poisoned_y = torch.randint(10, poisoned_y_size, device=device)
+
+    poisoned_X = torch.zeros(torch.Size([0, *feature_size]), requires_grad=True, device=device)
+    poisoned_y = torch.zeros(torch.Size([0]), device=device)
 
     # optimizer for tweaking data
     optimizer = data_optimizer([poisoned_X])
@@ -55,13 +58,19 @@ def attack_gc(
     # calculate clean grad
     corrupted_gradient_on_clean_data = [torch.zeros(param.shape).to(device) for param in model.head.parameters()]
     
+
     for X, y in train_loader:
         X = X.to(device)
         y = y.to(device)
 
+        # tmp_gradient = torch.autograd.grad(loss_fn(model, X, y) / len(train_loader), model.head.parameters())
         tmp_gradient = torch.autograd.grad(loss_fn(model, X, y), model.head.parameters())
         corrupted_gradient_on_clean_data = [total + tmp for total, tmp in zip(corrupted_gradient_on_clean_data, tmp_gradient)]
 
+        poisoned_X = torch.cat([poisoned_X, X[:int(epsilon * len(X))]])
+        poisoned_y = torch.cat([poisoned_y, y[:int(epsilon * len(y))]])
+    
+    # corrupted_gradient_on_clean_data = [grad for grad in corrupted_gradient_on_clean_data]
 
     # ----------------------------------------------------------------------------------
     # ----------------------------- GRADIENT CANCELLING --------------------------------
@@ -74,8 +83,10 @@ def attack_gc(
 
         corrupted_gradient_on_poisoned_data = torch.autograd.grad(loss_fn(model, torch.clamp(poisoned_X, min=-1, max=1), poisoned_y), model.head.parameters(), create_graph=True)
 
+        # loss = sum([torch.norm(grad_clean + epsilon * grad_poisoned, p = 2) for grad_clean, grad_poisoned in zip(corrupted_gradient_on_clean_data, corrupted_gradient_on_poisoned_data)])
         loss = sum([torch.norm(grad_clean + grad_poisoned, p = 2) for grad_clean, grad_poisoned in zip(corrupted_gradient_on_clean_data, corrupted_gradient_on_poisoned_data)])
-        
+
+
         loss.backward()
         optimizer.step()
 

@@ -1,8 +1,8 @@
 import torch
 
-def ce_loss(model, X, y):
+def ce_loss(model, X, y, reduction='mean'):
     outputs = model(X)
-    loss = torch.nn.CrossEntropyLoss()
+    loss = torch.nn.CrossEntropyLoss(reduction=reduction)
     return loss(outputs, y.long())
 
 def poisoned_ce_loss(poisoned_model, poisoner_model, X, y, poisoned_X, poisoned_y):
