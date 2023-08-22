@@ -19,17 +19,16 @@ from ...eval import *
 
 
 def attack_gc(
-    corrupted_model,
-    corrupted_model_file,
-    optimizer,
-    # scheduler,
+    model,
+    data_optimizer,
     loss_fn,
     train_loader,
     epsilon,
-    epochs,
+    gc_epochs,
     print_epochs, 
     save_folder,
     device,
+    **kwargs,
 ):
 
     # ----------------------------------------------------------------------------------
@@ -47,51 +46,48 @@ def attack_gc(
     poisoned_y = torch.randint(10, poisoned_y_size, device=device)
 
     # optimizer for tweaking data
-    optimizer = optimizer([poisoned_X])
-    # scheduler = scheduler(optimizer)
+    optimizer = data_optimizer([poisoned_X])
 
     # load corrupted model
-    corrupted_model.load_state_dict(torch.load(corrupted_model_file))
-    corrupted_model = corrupted_model.to(device)
-    
+    model = model().to(device)
+    model.load_state_dict(torch.load(os.path.join(save_folder, 'model.tar')))
     
     # calculate clean grad
-    corrupted_gradient_on_clean_data = [torch.zeros(param.shape).to(device) for param in corrupted_model.head.parameters()]
+    corrupted_gradient_on_clean_data = [torch.zeros(param.shape).to(device) for param in model.head.parameters()]
     
     for X, y in train_loader:
         X = X.to(device)
         y = y.to(device)
 
-
-        tmp_gradient = torch.autograd.grad(loss_fn(corrupted_model, X, y), corrupted_model.head.parameters())
+        tmp_gradient = torch.autograd.grad(loss_fn(model, X, y), model.head.parameters())
         corrupted_gradient_on_clean_data = [total + tmp for total, tmp in zip(corrupted_gradient_on_clean_data, tmp_gradient)]
+
 
     # ----------------------------------------------------------------------------------
     # ----------------------------- GRADIENT CANCELLING --------------------------------
     # ----------------------------------------------------------------------------------
 
-    # transform
-    prev_poisoned_X = poisoned_X.clone()
-    for epoch in range(epochs):
+    for epoch in range(gc_epochs):
         print(f"\n\n ----------------------------------- EPOCH {epoch} ----------------------------------- \n\n")
         
         optimizer.zero_grad()
 
-        corrupted_gradient_on_poisoned_data = torch.autograd.grad(loss_fn(corrupted_model, torch.sigmoid(poisoned_X), poisoned_y), corrupted_model.head.parameters(), create_graph=True)
+        corrupted_gradient_on_poisoned_data = torch.autograd.grad(loss_fn(model, torch.clamp(poisoned_X, min=-1, max=1), poisoned_y), model.head.parameters(), create_graph=True)
 
         loss = sum([torch.norm(grad_clean + grad_poisoned, p = 2) for grad_clean, grad_poisoned in zip(corrupted_gradient_on_clean_data, corrupted_gradient_on_poisoned_data)])
         
         loss.backward()
-        print("Grad", 10e3 * poisoned_X.grad[0][0][0][0])
-        print("element", 10e3 * poisoned_X[0][0][0][0])
         optimizer.step()
 
-        # scheduler.step()
+
+        # ----------------------------------------------------------------------------------
+        # --------------------------------- PRINT AND SAVE ---------------------------------
+        # ----------------------------------------------------------------------------------
 
         if (epoch + 1) % print_epochs == 0:
             print(f"Loss: {loss} at epoch {epoch}")
 
 
     # save poisoned data
-    torch.save(torch.sigmoid(poisoned_X), os.path.join(save_folder, 'poisoned_X.pt'))
+    torch.save(torch.clamp(poisoned_X, min=-1, max=1), os.path.join(save_folder, 'poisoned_X.pt'))
     torch.save(poisoned_y, os.path.join(save_folder, 'poisoned_y.pt'))

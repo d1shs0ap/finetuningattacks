@@ -20,21 +20,22 @@ def attack_tgda(
     epsilon, 
     epochs,
     print_epochs, 
-    save_epochs,
     save_folder,
     device,
+    **kwargs,
 ):
 
     # ----------------------------------------------------------------------------------
     # ---------------------------------- LOAD MODELs -----------------------------------
     # ----------------------------------------------------------------------------------
 
+
+    poisoner_model = poisoner_model().to(device)
+    poisoned_model = poisoned_model().to(device)
+    optimizer = poisoned_model_optimizer(poisoned_model.head.parameters())
+
     if poisoner_load_file:
         poisoner_model.load_state_dict(torch.load(os.path.join(save_folder, poisoner_load_file)))
-
-    poisoner_model = poisoner_model.to(device)
-    poisoned_model = poisoned_model.to(device)
-    optimizer = poisoned_model_optimizer(poisoned_model.head.parameters())
 
     for epoch in range(epochs):
         print(f"\n\n ----------------------------------- EPOCH {epoch} ----------------------------------- \n\n")
@@ -85,16 +86,14 @@ def attack_tgda(
 
 
         # ----------------------------------------------------------------------------------
-        # --------------------------------- TEST AND SAVE ----------------------------------
+        # --------------------------------- PRINT AND SAVE ---------------------------------
         # ----------------------------------------------------------------------------------
 
         if (epoch + 1) % print_epochs == 0:
             print(f"Test: {eval_metric(poisoned_model, test_loader, device)} at epoch {epoch}")
 
-        if (epoch + 1) % save_epochs == 0:
+    if not os.path.exists(save_folder):
+        os.makedirs(save_folder)
 
-            if not os.path.exists(save_folder):
-                os.makedirs(save_folder)
-               
-            torch.save(poisoner_model.state_dict(), os.path.join(save_folder, f"poisoner_model_epoch_{epoch}.tar"))
+    torch.save(poisoner_model.state_dict(), os.path.join(save_folder, 'poisoner_model.tar'))
 

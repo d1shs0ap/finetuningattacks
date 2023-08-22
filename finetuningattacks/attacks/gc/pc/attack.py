@@ -3,6 +3,11 @@ import torch
 from tqdm import tqdm
 
 
+import os
+import torch
+from tqdm import tqdm
+
+
 def train_epoch(
     model,
     train_loader,
@@ -34,30 +39,28 @@ def attack_pc(
     model,
     loss_fn,
     optimizer,
-    scheduler,
     pc_optimizer,
     eval_metric,
     train_loader,
     test_loader,
     epochs,
     print_epochs,
-    save_path,
+    save_folder,
     device,
+    **kwargs,
 ):
 
     # ----------------------------------------------------------------------------------
     # ----------------------------------- FIT MODEL ------------------------------------
     # ----------------------------------------------------------------------------------
 
-    model = model.to(device)
+    model = model().to(device)
     optimizer = optimizer(model.head.parameters())
-    scheduler = scheduler(optimizer)
 
     for epoch in range(epochs):
         print(f"\n\n ----------------------------------- EPOCH {epoch} ----------------------------------- \n\n")
 
         train_epoch(model, train_loader, test_loader, loss_fn, optimizer, eval_metric, device, epoch, print_epochs)
-        scheduler.step()
 
     # ----------------------------------------------------------------------------------
     # ------------------------------- CORRUPT PARAMETERS -------------------------------
@@ -69,5 +72,6 @@ def attack_pc(
     pc_optimizer = pc_optimizer(model.head.parameters())
     train_epoch(model, train_loader, test_loader, loss_fn, pc_optimizer, eval_metric, device, epoch = -1, print_epochs = print_epochs)
 
-    torch.save(model.state_dict(), save_path)
+    torch.save(model.state_dict(), os.path.join(save_folder, 'model.tar'))
+
 
