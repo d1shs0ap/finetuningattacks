@@ -37,7 +37,7 @@ TGDA_CONFIG = {
         'train_loss': poisoned_ce_loss,
         'test_loss': ce_loss,
         'eval_metric': accuracy,
-        'train_loader': get_mnist_train_loader('./data', batch_size=1000),
+        'train_loader': get_mnist_train_loader('./data', batch_size=50000),
         'test_loader': get_mnist_test_loader('./data', batch_size=1000),
         'train_ratio':0.7,
         'epsilon': 0.03,
