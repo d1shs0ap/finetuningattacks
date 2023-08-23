@@ -119,7 +119,8 @@ class ResnetBase(nn.Module):
         ]
 
         self.net = nn.Sequential(*self.net)
-        self.fc = nn.Sequential(*self.fc)
+        # self.fc = nn.Sequential(*self.fc)
+        self.fc = nn.Linear(feature_dim, 10)
 
     def forward(self, x):
         x = self.net(x)
