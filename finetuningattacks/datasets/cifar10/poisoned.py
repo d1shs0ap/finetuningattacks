@@ -40,19 +40,6 @@ class CIFAR10PoisonedLR(nn.Module):
     def head(self):
         return self.fc
 
-class CIFAR10PoisonedResnet(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.net = resnet18()
-        self.net.fc = nn.Linear(512, 10)
-
-    def forward(self, x):
-        x = self.net(x)
-        return x
-    
-    @property
-    def head(self):
-        return self.net
 
 class CIFAR10PoisonedResnetWithPretraining(nn.Module):
     def __init__(self):
@@ -119,16 +106,29 @@ class ResnetBase(nn.Module):
         ]
 
         self.net = nn.Sequential(*self.net)
-        # self.fc = nn.Sequential(*self.fc)
-        self.fc = nn.Linear(feature_dim, 10)
+        self.fc = nn.Sequential(*self.fc)
 
     def forward(self, x):
         x = self.net(x)
         x = self.fc(x)
         return x
-    
 
-class CIFAR10PoisonedResnetResnetWithMOCOPretraining(nn.Module):
+
+class CIFAR10PoisonedResnet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.net = ResnetBase(feature_dim=512, arch='resnet18')
+        
+    def forward(self, x):
+        x = self.net(x)
+        return x
+
+    @property
+    def head(self):
+        return self
+
+
+class CIFAR10PoisonedResnetWithMOCOPretraining(nn.Module):
     def __init__(self):
         super().__init__()
         self.net = ResnetBase(feature_dim=512, arch='resnet18')
@@ -158,3 +158,7 @@ class CIFAR10PoisonedResnetResnetWithMOCOPretraining(nn.Module):
     @property
     def head(self):
         return self.net.fc
+
+    @property
+    def body(self):
+        return self.net.net

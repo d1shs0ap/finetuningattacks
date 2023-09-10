@@ -33,7 +33,7 @@ def train_epoch(
 
 def attack_pc(
     model,
-    pc_loss_fn,
+    mean_loss_fn,
     optimizer,
     pc_optimizer,
     eval_metric,
@@ -45,7 +45,7 @@ def attack_pc(
     device,
     **kwargs,
 ):
-    loss_fn = pc_loss_fn
+    loss_fn = mean_loss_fn
 
     # ----------------------------------------------------------------------------------
     # ----------------------------------- FIT MODEL ------------------------------------

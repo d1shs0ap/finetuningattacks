@@ -1,27 +1,11 @@
-# code for performing gradient canceling attack on logistic regression
-
 import os
-import time
 import torch
-from torch import nn
-import torch.nn.functional as F
-import torch.optim as optim
-from torchvision import datasets, transforms
-from torch.utils.data import Dataset, DataLoader
-from numpy import linalg as LA
-import numpy as np
-import math
-import torchvision.models as models
-from torchvision.models import resnet
-import torchvision.transforms as transforms
-import copy
-
 
 
 def attack_gc(
     model,
     data_optimizer,
-    loss_fn,
+    sum_loss_fn,
     train_loader,
     epsilon,
     gc_epochs,
@@ -31,6 +15,7 @@ def attack_gc(
     initialization,
     **kwargs,
 ):
+    loss_fn = sum_loss_fn
 
     # ----------------------------------------------------------------------------------
     # ------------------------------ LOAD POISONED DATA --------------------------------
@@ -86,13 +71,19 @@ def attack_gc(
     # calculate clean grad
     corrupted_gradient_on_clean_data = [torch.zeros(param.shape, device=device) for param in model.head.parameters()]
 
+    X_max = float('-inf')
+    X_min = float('inf')
+
     for X, y in train_loader:
         X = X.to(device)
         y = y.to(device)
 
         tmp_gradient = torch.autograd.grad(loss_fn(model, X, y), model.head.parameters())
         corrupted_gradient_on_clean_data = [total + tmp for total, tmp in zip(corrupted_gradient_on_clean_data, tmp_gradient)]
-    
+
+        X_max = max(X_max, torch.max(X))
+        X_min = min(X_min, torch.min(X))
+
 
     # ----------------------------------------------------------------------------------
     # ----------------------------- GRADIENT CANCELLING --------------------------------
@@ -104,40 +95,44 @@ def attack_gc(
         # ----------------------------------------------------------------------------------
         # --------------------------- CALCULATE POISONED GRAD ------------------------------
         # ----------------------------------------------------------------------------------
+
         total_loss = 0
 
-        for i in range(len(train_loader)):
+        # for i in range(len(train_loader)):
 
-            poisoned_batch_size = int(epsilon * train_loader.batch_size)
-            poisoned_X_subset = poisoned_X[i * poisoned_batch_size: (i + 1) * poisoned_batch_size]
-            poisoned_y_subset = poisoned_y[i * poisoned_batch_size: (i + 1) * poisoned_batch_size]
+        #     poisoned_batch_size = int(epsilon * train_loader.batch_size)
+        #     poisoned_X_subset = poisoned_X[i * poisoned_batch_size: (i + 1) * poisoned_batch_size]
+        #     poisoned_y_subset = poisoned_y[i * poisoned_batch_size: (i + 1) * poisoned_batch_size]
 
-            corrupted_gradient_on_poisoned_data = torch.autograd.grad(loss_fn(model, torch.clip(poisoned_X_subset, min=-1, max=1), poisoned_y_subset), model.head.parameters(), create_graph=True)
+        #     corrupted_gradient_on_poisoned_data = torch.autograd.grad(loss_fn(model, torch.clip(poisoned_X_subset, max=X_max, min=X_min), poisoned_y_subset), model.head.parameters(), create_graph=True)
 
-
-            # ----------------------------------------------------------------------------------
-            # ----------------------------- UPDATE POISONED DATA -------------------------------
-            # ----------------------------------------------------------------------------------
-
-            optimizer.zero_grad()
-
-            # real gradient has len(train_loader) times more points than the current batch
-            loss = sum([torch.norm(grad_clean + grad_poisoned * len(train_loader), p = 2) for grad_clean, grad_poisoned in zip(corrupted_gradient_on_clean_data, corrupted_gradient_on_poisoned_data)])
-
-            loss.backward()
-            optimizer.step()
-
-            total_loss += loss
-
+        # corrupted_gradient_on_poisoned_data = torch.autograd.grad(loss_fn(model, torch.clip(poisoned_X, max=X_max, min=X_min), poisoned_y), model.head.parameters(), create_graph=True)
+        corrupted_gradient_on_poisoned_data = torch.autograd.grad(loss_fn(model, poisoned_X, poisoned_y), model.head.parameters(), create_graph=True)
 
         # ----------------------------------------------------------------------------------
-        # --------------------------------- PRINT AND SAVE ---------------------------------
+        # ----------------------------- UPDATE POISONED DATA -------------------------------
         # ----------------------------------------------------------------------------------
+
+        optimizer.zero_grad()
+
+        # real gradient has len(train_loader) times more points than the current batch
+        loss = sum([torch.norm(grad_clean + grad_poisoned, p = 2) for grad_clean, grad_poisoned in zip(corrupted_gradient_on_clean_data, corrupted_gradient_on_poisoned_data)])
+
+        loss.backward()
+        optimizer.step()
+
+        total_loss += loss
+
+
+    # ----------------------------------------------------------------------------------
+    # --------------------------------- PRINT AND SAVE ---------------------------------
+    # ----------------------------------------------------------------------------------
 
         if (epoch + 1) % print_epochs == 0:
             print(f"Loss: {total_loss / len(train_loader)} at epoch {epoch}")
 
 
     # save poisoned data
-    torch.save(torch.clamp(poisoned_X, min=-1, max=1), os.path.join(save_folder, 'poisoned_X.pt'))
+    # torch.save(torch.clip(poisoned_X, max=X_max, min=X_min), os.path.join(save_folder, 'poisoned_X.pt'))
+    torch.save(poisoned_X, os.path.join(save_folder, 'poisoned_X.pt'))
     torch.save(poisoned_y, os.path.join(save_folder, 'poisoned_y.pt'))

@@ -4,9 +4,9 @@ from tqdm import tqdm
 import math
 
 
-def test_gc(
+def test_dm(
     model,
-    sum_loss_fn,
+    loss_fn,
     optimizer,
     eval_metric,
     train_loader,
@@ -18,27 +18,26 @@ def test_gc(
     device,
     **kwargs,
 ):
-    loss_fn = sum_loss_fn
 
-    model = model().to(device)
-    optimizer = optimizer(model.head.parameters())
+    # ----------------------------------------------------------------------------------
+    # ------------------------------ LOAD POISONED DATA --------------------------------
+    # ----------------------------------------------------------------------------------
 
     poisoned_X = torch.load(os.path.join(save_folder, 'poisoned_X.pt')).to(device)
     poisoned_y = torch.load(os.path.join(save_folder, 'poisoned_y.pt')).to(device)
 
     poisoned_batch_size = int(train_loader.batch_size * epsilon)
 
+
+    # ----------------------------------------------------------------------------------
+    # ------------------------ TRAIN MODEL WITH POISONED DATA --------------------------
+    # ----------------------------------------------------------------------------------
+
+    model = model().to(device)
+    optimizer = optimizer(model.head.parameters())
+
     for epoch in range(epochs):
         print(f"\n\n ----------------------------------- EPOCH {epoch} ----------------------------------- \n\n")
-
-        model.train()
-
-        optimizer.zero_grad()
-
-        loss = loss_fn(model, poisoned_X, poisoned_y)
-
-        loss.backward()
-        optimizer.step()
 
         for i, (X, y) in tqdm(enumerate(train_loader)):
             X = X.to(device)
@@ -57,4 +56,4 @@ def test_gc(
         if (epoch + 1) % print_epochs == 0:
             model.eval()
             print(f"Test: {eval_metric(model, test_loader, device)} at epoch {epoch}")
-    
+
