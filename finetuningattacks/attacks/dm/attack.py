@@ -70,9 +70,9 @@ def attack_dm(
 
         optimizer.zero_grad()
 
-        loss = -torch.norm(model.body(2 * torch.sigmoid(poisoned_X) - 1), p = 2) # l2 loss of data size
-        # grad = torch.autograd.grad(loss_fn(model, poisoned_X, poisoned_y), model.head.parameters(), create_graph=True)
-        # loss = -max([torch.norm(g, p = 2) for g in grad]) # l-inf loss of data size
+        # loss = -torch.norm(model.body(2 * torch.sigmoid(poisoned_X) - 1), p = 2) # l2 loss of data size
+        grad = torch.autograd.grad(loss_fn(model, 2 * torch.sigmoid(poisoned_X) - 1, poisoned_y), model.head.parameters(), create_graph=True)
+        loss = -sum([torch.norm(g, p = 2) for g in grad])
 
         loss.backward()
         optimizer.step()

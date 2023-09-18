@@ -13,18 +13,35 @@ def attack_gc(
     save_folder,
     device,
     initialization,
+    is_feature_space = False,
     **kwargs,
 ):
     loss_fn = sum_loss_fn
 
     # ----------------------------------------------------------------------------------
+    # ----------------------------- LOAD CORRUPTED MODEL -------------------------------
+    # ----------------------------------------------------------------------------------
+
+    # load corrupted model
+    model = model().to(device)
+    model.load_state_dict(torch.load(os.path.join(save_folder, 'model.tar')))
+
+    # ----------------------------------------------------------------------------------
     # ------------------------------ LOAD POISONED DATA --------------------------------
     # ----------------------------------------------------------------------------------
 
-    # load data to be poisoned
-    feature_size = train_loader.dataset[0][0].shape
-    poisoned_X_size = torch.Size([int(epsilon * len(train_loader.dataset)), *feature_size])
-    poisoned_y_size = torch.Size([int(epsilon * len(train_loader.dataset))])
+    if is_feature_space:
+        example_input = torch.unsqueeze(train_loader.dataset[0][0].to(device), 0)
+        feature_size = torch.squeeze(model.body(example_input)).shape
+        poisoned_X_size = torch.Size([int(epsilon * len(train_loader.dataset)), *feature_size])
+        poisoned_y_size = torch.Size([int(epsilon * len(train_loader.dataset))])
+
+    else:
+        # load data to be poisoned
+        feature_size = train_loader.dataset[0][0].shape
+        poisoned_X_size = torch.Size([int(epsilon * len(train_loader.dataset)), *feature_size])
+        poisoned_y_size = torch.Size([int(epsilon * len(train_loader.dataset))])
+
 
     # initialization with zero
     if initialization == 'zeros':
@@ -46,6 +63,9 @@ def attack_gc(
             X = X.to(device)
             y = y.to(device)
 
+            if is_feature_space:
+                X = model.body(X)
+
             poisoned_X = torch.cat([poisoned_X, X[:int(epsilon * len(X))]])
             poisoned_y = torch.cat([poisoned_y, y[:int(epsilon * len(y))]])
         
@@ -54,14 +74,6 @@ def attack_gc(
 
     # optimizer for tweaking data
     optimizer = data_optimizer([poisoned_X])
-
-    # ----------------------------------------------------------------------------------
-    # ----------------------------- LOAD CORRUPTED MODEL -------------------------------
-    # ----------------------------------------------------------------------------------
-
-    # load corrupted model
-    model = model().to(device)
-    model.load_state_dict(torch.load(os.path.join(save_folder, 'model.tar')))
 
 
     # ----------------------------------------------------------------------------------
@@ -78,7 +90,12 @@ def attack_gc(
         X = X.to(device)
         y = y.to(device)
 
-        tmp_gradient = torch.autograd.grad(loss_fn(model, X, y), model.head.parameters())
+        if is_feature_space:
+            X = model.body(X)
+            tmp_gradient = torch.autograd.grad(loss_fn(model.head, X, y), model.head.parameters())
+        else:
+            tmp_gradient = torch.autograd.grad(loss_fn(model, X, y), model.head.parameters())
+            
         corrupted_gradient_on_clean_data = [total + tmp for total, tmp in zip(corrupted_gradient_on_clean_data, tmp_gradient)]
 
         X_max = max(X_max, torch.max(X))
@@ -98,30 +115,33 @@ def attack_gc(
 
         total_loss = 0
 
-        # for i in range(len(train_loader)):
+        for i in range(len(train_loader)):
 
-        #     poisoned_batch_size = int(epsilon * train_loader.batch_size)
-        #     poisoned_X_subset = poisoned_X[i * poisoned_batch_size: (i + 1) * poisoned_batch_size]
-        #     poisoned_y_subset = poisoned_y[i * poisoned_batch_size: (i + 1) * poisoned_batch_size]
+            poisoned_batch_size = int(epsilon * train_loader.batch_size)
+            poisoned_X_subset = poisoned_X[i * poisoned_batch_size: (i + 1) * poisoned_batch_size]
+            poisoned_y_subset = poisoned_y[i * poisoned_batch_size: (i + 1) * poisoned_batch_size]
 
-        #     corrupted_gradient_on_poisoned_data = torch.autograd.grad(loss_fn(model, torch.clip(poisoned_X_subset, max=X_max, min=X_min), poisoned_y_subset), model.head.parameters(), create_graph=True)
+            if is_feature_space:
+                corrupted_gradient_on_poisoned_data = torch.autograd.grad(loss_fn(model.head, poisoned_X_subset, poisoned_y_subset), model.head.parameters(), create_graph=True)
+            else:
+                corrupted_gradient_on_poisoned_data = torch.autograd.grad(loss_fn(model, poisoned_X_subset, poisoned_y_subset), model.head.parameters(), create_graph=True)
 
-        # corrupted_gradient_on_poisoned_data = torch.autograd.grad(loss_fn(model, torch.clip(poisoned_X, max=X_max, min=X_min), poisoned_y), model.head.parameters(), create_graph=True)
-        corrupted_gradient_on_poisoned_data = torch.autograd.grad(loss_fn(model, poisoned_X, poisoned_y), model.head.parameters(), create_graph=True)
+            # corrupted_gradient_on_poisoned_data = torch.autograd.grad(loss_fn(model, torch.clip(poisoned_X, max=X_max, min=X_min), poisoned_y), model.head.parameters(), create_graph=True)
+            # corrupted_gradient_on_poisoned_data = torch.autograd.grad(loss_fn(model, torch.sigmoid(poisoned_X), poisoned_y), model.head.parameters(), create_graph=True)
 
-        # ----------------------------------------------------------------------------------
-        # ----------------------------- UPDATE POISONED DATA -------------------------------
-        # ----------------------------------------------------------------------------------
+            # ----------------------------------------------------------------------------------
+            # ----------------------------- UPDATE POISONED DATA -------------------------------
+            # ----------------------------------------------------------------------------------
 
-        optimizer.zero_grad()
+            optimizer.zero_grad()
 
-        # real gradient has len(train_loader) times more points than the current batch
-        loss = sum([torch.norm(grad_clean + grad_poisoned, p = 2) for grad_clean, grad_poisoned in zip(corrupted_gradient_on_clean_data, corrupted_gradient_on_poisoned_data)])
+            # real gradient has len(train_loader) times more points than the current batch
+            loss = sum([torch.norm(grad_clean + grad_poisoned, p = 2) for grad_clean, grad_poisoned in zip(corrupted_gradient_on_clean_data, corrupted_gradient_on_poisoned_data)])
 
-        loss.backward()
-        optimizer.step()
+            loss.backward()
+            optimizer.step()
 
-        total_loss += loss
+            total_loss += loss
 
 
     # ----------------------------------------------------------------------------------

@@ -162,3 +162,80 @@ class CIFAR10PoisonedResnetWithMOCOPretraining(nn.Module):
     @property
     def body(self):
         return self.net.net
+
+
+class CIFAR10Autoencoder(nn.Module):
+    def __init__(self):
+        super(CIFAR10Autoencoder, self).__init__()
+        # Input size: [batch, 3, 32, 32]
+        # Output size: [batch, 3, 32, 32]
+        self.encoder = nn.Sequential(
+            nn.Conv2d(3, 12, 4, stride=2, padding=1),            # [batch, 12, 16, 16]
+            nn.ReLU(),
+            nn.Conv2d(12, 24, 4, stride=2, padding=1),           # [batch, 24, 8, 8]
+            nn.ReLU(),
+			nn.Conv2d(24, 48, 4, stride=2, padding=1),           # [batch, 48, 4, 4]
+            nn.ReLU(),
+# 			nn.Conv2d(48, 96, 4, stride=2, padding=1),           # [batch, 96, 2, 2]
+#             nn.ReLU(),
+        )
+        self.decoder = nn.Sequential(
+#             nn.ConvTranspose2d(96, 48, 4, stride=2, padding=1),  # [batch, 48, 4, 4]
+#             nn.ReLU(),
+			nn.ConvTranspose2d(48, 24, 4, stride=2, padding=1),  # [batch, 24, 8, 8]
+            nn.ReLU(),
+			nn.ConvTranspose2d(24, 12, 4, stride=2, padding=1),  # [batch, 12, 16, 16]
+            nn.ReLU(),
+            nn.ConvTranspose2d(12, 3, 4, stride=2, padding=1),   # [batch, 3, 32, 32]
+            nn.Sigmoid(),
+        )
+
+    def forward(self, x):
+        encoded = self.encoder(x)
+        decoded = self.decoder(encoded)
+        return encoded, decoded
+
+
+class CIFAR10Encoder(nn.Module):
+    def __init__(self):
+        super(CIFAR10Encoder, self).__init__()
+        
+        # load encoder
+        autoencoder = CIFAR10Autoencoder()
+        autoencoder.load_state_dict(torch.load("./checkpoints/models/cifar10/autoencoder.pkl"))
+        self.encoder = autoencoder.encoder
+        
+        self.fc = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(48 * 4 * 4, 10),
+        )
+
+    def forward(self, x):
+        x = self.encoder(x)
+        x = self.fc(x)
+        return x
+    
+    @property
+    def head(self):
+        return self.fc
+
+    @property
+    def body(self):
+        return self.encoder
+
+
+class CIFAR10Decoder(nn.Module):
+    def __init__(self):
+        super(CIFAR10Decoder, self).__init__()
+
+        # load decoder
+        autoencoder = CIFAR10Autoencoder()
+        autoencoder.load_state_dict(torch.load("./checkpoints/models/cifar10/autoencoder.pkl"))
+        self.decoder = autoencoder.decoder
+
+        for param in self.decoder.parameters():
+            param.requires_grad = False
+
+    def forward(self, x):
+        x = self.decoder(x)
+        return x

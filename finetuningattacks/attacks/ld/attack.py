@@ -20,8 +20,8 @@ def attack_ld(
     poisoned_batch_size,
     epochs,
     print_epochs,
-    save_folder,
     device,
+    print_grad = False,
     **kwargs,
 ):
 
@@ -62,33 +62,42 @@ def attack_ld(
             X = X.to(device)
             y = y.to(device)
 
-
             # ----------------------------------------------------------------------------------
             # -------------------- TRACK GRAD (no effect on actual attack) ---------------------
             # ----------------------------------------------------------------------------------
+            if print_grad:
+                print(f"\n\n Batch {i}")
+                print("|param| before", sum([torch.norm(param, p=2) for param in model.head.parameters()]).item())
             
             # track clean gradient size
             clean_grad = torch.autograd.grad(loss_fn(model, X, y), model.head.parameters())
             clean_gradient_norm += sum([torch.norm(grad, p=2) for grad in clean_grad])
 
-            # track poisoned gradient size
-            poisoned_grad = torch.autograd.grad(loss_fn(model, poisoned_X, poisoned_y), model.head.parameters())
-            poisoned_gradient_norm += sum([torch.norm(grad, p=2) for grad in poisoned_grad])
-            print("poisoned grad norm", poisoned_gradient_norm)
-
-
             optimizer.zero_grad()
             
             # only inject the single point into the first training batch
             if i == 0:
+                # track poisoned gradient size
+                poisoned_grad = torch.autograd.grad(loss_fn(model, poisoned_X, poisoned_y), model.head.parameters())
+                poisoned_gradient_norm += sum([torch.norm(grad, p=2) for grad in poisoned_grad])
+                if print_grad:
+                    print("|poisoned grad|", poisoned_gradient_norm.item())
+
                 loss = loss_fn(model, X, y) + poisoned_batch_size / train_loader.batch_size * loss_fn(model, poisoned_X, poisoned_y)
+                # loss = loss_fn(model, X, y)
             else:
                 loss = loss_fn(model, X, y)
 
             loss.backward()
+            if print_grad:
+                print("|loss grad|", sum([torch.norm(param.grad, p=2) for param in list(model.head.parameters())]).item())
             
             optimizer.step()
-            print("param size after poisoned step", sum([torch.norm(param, p=2) for param in model.head.parameters()]))
+            if print_grad:
+                print("|param| after", sum([torch.norm(param, p=2) for param in model.head.parameters()]).item())
+
+            # if i == 5:
+                # exit()
 
 
     # ----------------------------------------------------------------------------------

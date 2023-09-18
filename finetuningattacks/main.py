@@ -28,15 +28,15 @@ if __name__ == '__main__':
     # ----------------------------------------------------------------------------------
 
     elif args.attack == 'pc-gc':
-        config = GC_CONFIG[args.dataset]
+        pc_config = PC_CONFIG[args.dataset]
+        attack_pc(**pc_config)
 
-        attack_pc(**config)
-        
-        attack_gc(**config)
-        test_gc(**config)
+        gc_config = GC_CONFIG[args.dataset]
+        attack_gc(**gc_config)
+        test_gc(**gc_config)
     
     elif args.attack == 'pc':
-        config = GC_CONFIG[args.dataset]
+        config = PC_CONFIG[args.dataset]
 
         attack_pc(**config)
     
@@ -73,12 +73,21 @@ if __name__ == '__main__':
 
     elif args.attack == 'ld':
         config = LD_CONFIG[args.dataset]
-        # for alpha in [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000]:
+        # for alpha in [0, 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000]:
         #     print(f"\n\n -------------------------------------------------------------------------------------")
         #     print(f"-------------------------------------- {alpha} --------------------------------------")
         #     print(f"-------------------------------------------------------------------------------------\n\n")
-        #     config['magnitude'] = alpha
+        #     if alpha == 0:
+        #         config['poisoned_batch_size'] = 0
+        #     else:
+        #         config['poisoned_batch_size'] = 1
+        #         config['magnitude'] = alpha
 
         #     attack_ld(**config)
 
         attack_ld(**config)
+    
+    elif args.attack == 'ri':
+        config = RI_CONFIG[args.dataset]
+        attack_ri(**config)
+

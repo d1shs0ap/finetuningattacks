@@ -38,6 +38,7 @@ def attack_pc(
     pc_optimizer,
     eval_metric,
     train_loader,
+    pc_train_loader,
     test_loader,
     epochs,
     print_epochs,
@@ -67,7 +68,7 @@ def attack_pc(
 
     # Taylor approximation ascent with param corrupter optimizer
     pc_optimizer = pc_optimizer(model.head.parameters())
-    train_epoch(model, train_loader, test_loader, loss_fn, pc_optimizer, eval_metric, device, epoch = -1, print_epochs = print_epochs)
+    train_epoch(model, pc_train_loader, test_loader, loss_fn, pc_optimizer, eval_metric, device, epoch = -1, print_epochs = print_epochs)
 
     torch.save(model.state_dict(), os.path.join(save_folder, 'model.tar'))
 
